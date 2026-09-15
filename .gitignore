@@ -1,0 +1,15 @@
+# Maven
+target/
+*.class
+
+# IDE
+.vscode/
+.idea/
+*.iml
+bin/
+
+# Credenciales reales - NUNCA subir a GitHub
+backend/expresofast/src/main/resources/application.properties
+
+# Sistema
+.DS_Store
