@@ -3,8 +3,8 @@
 **Curso:** IF0009 – Desarrollo de Software IV
 **Ciclo:** II-2026
 **Universidad de Costa Rica — Sede del Atlántico, Recinto Paraíso**
-**Estudiante:** [Su nombre completo]
-**Carné:** [Su carné, ej. C5H153]
+**Estudiante:** Kenneth Miranda León
+**Carné:** C5H153
 
 Plataforma full-stack de logística ExpresoFast, Parte II: seguridad con JWT,
 control de acceso basado en roles (RBAC), DTOs con validación estricta,
