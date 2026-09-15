@@ -47,6 +47,8 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Peticiones de pre-vuelo CORS siempre permitidas
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 // Login público
                 .requestMatchers("/api/auth/**").permitAll()
                 // Matriz de permisos RBAC
