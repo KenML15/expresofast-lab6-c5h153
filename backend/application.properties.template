@@ -1,12 +1,11 @@
-# Copie este archivo como src/main/resources/application.properties
-# y complete sus propios valores. NO suba application.properties real a GitHub.
 
-spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=ExpresoFast_[CARNET];encrypt=true;trustServerCertificate=true;
+
+spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=ExpresoFast_C5H153;encrypt=true;trustServerCertificate=true;
 spring.datasource.username=sa
-spring.datasource.password=SU_PASSWORD_AQUI
+spring.datasource.password=Kevin0914**
 
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=none
 spring.jpa.show-sql=true
 
-app.jwt.secret=CAMBIE_ESTA_CLAVE_POR_UNA_ALEATORIA_DE_AL_MENOS_32_CARACTERES
+app.jwt.secret=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 app.jwt.expiration-ms=3600000
