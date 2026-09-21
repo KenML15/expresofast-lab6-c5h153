@@ -113,7 +113,7 @@
                             <rule>
                                 <element>PACKAGE</element>
                                 <includes>
-                                    <include>com.expresofast.service</include>
+                                    <include>cr.ac.ucr.paraiso.ie.c5h153.expresofast.business</include>
                                 </includes>
                                 <limits>
                                     <limit>
