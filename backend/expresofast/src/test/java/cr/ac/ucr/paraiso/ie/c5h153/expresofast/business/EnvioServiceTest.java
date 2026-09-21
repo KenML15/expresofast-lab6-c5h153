@@ -7,9 +7,12 @@ import cr.ac.ucr.paraiso.ie.c5h153.expresofast.data.UsuarioRepository;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.data.VehiculoRepository;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Conductor;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Envio;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Usuario;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.domain.Vehiculo;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.CambioEstadoDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioRequestDTO;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.dto.EnvioResponseDTO;
+import cr.ac.ucr.paraiso.ie.c5h153.expresofast.exception.InvalidStateTransitionException;
 import cr.ac.ucr.paraiso.ie.c5h153.expresofast.exception.ResourceNotFoundException;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +21,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.Optional;
@@ -113,5 +120,66 @@ class EnvioServiceTest {
 
         assertThrows(ResourceNotFoundException.class, () -> envioService.registrarEnvio(requestDTO));
         verify(envioRepository, never()).save(any(Envio.class));
+    }
+
+    @Test
+    @DisplayName("Debe lanzar InvalidStateTransitionException si un envío ENTREGADO intenta volver a EN_TRANSITO")
+    void actualizarEstadoEnvio_TransicionDeEntregadoAEnTransito_LanzaInvalidStateTransitionException() {
+        Envio envio = new Envio();
+        envio.setId(10);
+        envio.setCodigoRastreo("EXP-1001");
+        envio.setEstadoEnvio("ENTREGADO");
+
+        CambioEstadoDTO cambioEstadoDTO = new CambioEstadoDTO();
+        cambioEstadoDTO.setNuevoEstado("EN_TRANSITO");
+
+        when(envioRepository.findById(10)).thenReturn(Optional.of(envio));
+
+        assertThrows(InvalidStateTransitionException.class,
+                () -> envioService.actualizarEstadoEnvio(10, cambioEstadoDTO));
+
+        verify(envioRepository, never()).save(any(Envio.class));
+        verify(bitacoraEnvioRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Debe actualizar el estado y registrar la bitácora en una transición válida")
+    void actualizarEstadoEnvio_TransicionValida_ActualizaYRegistraEnBitacora() {
+        Envio envio = new Envio();
+        envio.setId(10);
+        envio.setCodigoRastreo("EXP-1001");
+        envio.setEstadoEnvio("PENDIENTE");
+        envio.setVehiculo(vehiculo);
+        envio.setConductor(conductor);
+
+        CambioEstadoDTO cambioEstadoDTO = new CambioEstadoDTO();
+        cambioEstadoDTO.setNuevoEstado("EN_TRANSITO");
+        cambioEstadoDTO.setObservaciones("Sale de bodega central");
+
+        Usuario usuarioAutenticado = new Usuario();
+        usuarioAutenticado.setUsername("kmora");
+        usuarioAutenticado.setNombreCompleto("Kenneth Mora");
+
+        when(envioRepository.findById(10)).thenReturn(Optional.of(envio));
+        when(envioRepository.save(any(Envio.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(usuarioRepository.findByUsername("kmora")).thenReturn(Optional.of(usuarioAutenticado));
+
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("kmora");
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        try (MockedStatic<SecurityContextHolder> mockedStatic = mockStatic(SecurityContextHolder.class)) {
+            mockedStatic.when(SecurityContextHolder::getContext).thenReturn(securityContext);
+
+            EnvioResponseDTO resultado = envioService.actualizarEstadoEnvio(10, cambioEstadoDTO);
+
+            assertEquals("EN_TRANSITO", resultado.getEstadoEnvio());
+        }
+
+        verify(bitacoraEnvioRepository, times(1)).save(argThat(bitacora ->
+                bitacora.getEstadoAnterior().equals("PENDIENTE")
+                        && bitacora.getEstadoNuevo().equals("EN_TRANSITO")
+                        && bitacora.getObservaciones().equals("Sale de bodega central")));
     }
 }
