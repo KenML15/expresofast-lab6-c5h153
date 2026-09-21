@@ -39,6 +39,12 @@ public class EnvioController {
         return ResponseEntity.ok(envioActualizado);
     }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<EnvioResponseDTO> obtenerEnvioPorId(@PathVariable Integer id) {
+        EnvioResponseDTO envio = envioService.obtenerEnvioPorId(id);
+        return ResponseEntity.ok(envio);
+    }
+
     @GetMapping("/{id}/bitacora")
     public ResponseEntity<List<BitacoraResponseDTO>> obtenerBitacora(@PathVariable Integer id) {
         return ResponseEntity.ok(envioService.obtenerBitacoraDeEnvio(id));

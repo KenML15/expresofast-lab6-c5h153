@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 @Transactional
 public class EnvioService {
 
-    // Estados finales desde los cuales ya no se permite volver a PENDIENTE o EN_TRANSITO
     private static final Set<String> ESTADOS_FINALES = Set.of("ENTREGADO", "CANCELADO");
     private static final Set<String> ESTADOS_NO_PERMITIDOS_DESDE_FINAL = Set.of("PENDIENTE", "EN_TRANSITO");
 
@@ -118,6 +117,14 @@ public class EnvioService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public EnvioResponseDTO obtenerEnvioPorId(Integer id) {
+        Envio envio = envioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Envío no encontrado con ID: " + id));
+        
+        return mapearAResponseDTO(envio);
+    }
+
     private void validarTransicionDeEstado(String codigoRastreo, String estadoAnterior, String estadoNuevo) {
         if (ESTADOS_FINALES.contains(estadoAnterior) && ESTADOS_NO_PERMITIDOS_DESDE_FINAL.contains(estadoNuevo)) {
             throw new InvalidStateTransitionException(
@@ -156,5 +163,31 @@ public class EnvioService {
                 envio.getEstadoEnvio(),
                 envio.getVehiculo().getPlaca(),
                 envio.getConductor().getNombre() + " " + envio.getConductor().getApellidos());
+    }
+
+    public EnvioResponseDTO cancelarEnvio(Integer id) {
+        Envio envio = envioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Envío no encontrado con ID: " + id));
+
+        if ("EN_TRANSITO".equals(envio.getEstadoEnvio()) || "ENTREGADO".equals(envio.getEstadoEnvio())) {
+            throw new IllegalArgumentException("No se puede cancelar un envío que ya está en ruta o entregado.");
+        }
+
+        envio.setEstadoEnvio("CANCELADO");
+        Envio actualizado = envioRepository.save(envio);
+        
+
+        return mapearAResponseDTO(actualizado);
+    }
+
+    public double calcularTarifa(double pesoKg, double distanciaKm) {
+     
+        if (pesoKg <= 10.0) {
+            return 2500.0;
+        } else if (pesoKg <= 50.0) {
+            return 7500.0;
+        } else {
+            return 12000.0;
+        }
     }
 }
